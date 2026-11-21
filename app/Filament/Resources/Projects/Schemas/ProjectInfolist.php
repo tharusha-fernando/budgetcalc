@@ -34,7 +34,7 @@ class ProjectInfolist
                             ->columnSpanFull(),
                     ]),
                 Section::make('Cash plan')
-                    ->columns(4)
+                    ->columns(5)
                     ->schema([
                         TextEntry::make('cash_on_hand')
                             ->label('Cash on hand')
@@ -48,6 +48,11 @@ class ProjectInfolist
                             ->label('Available cash')
                             ->money('INR')
                             ->state(fn (Project $record): float => $record->availableCash()),
+                        TextEntry::make('spent_by_me')
+                            ->label('I already spent')
+                            ->money('INR')
+                            ->state(fn (Project $record): float => $record->spentByMeTotal())
+                            ->helperText('Parts / labor paid by me that are not returned.'),
                         TextEntry::make('cash_still_needed')
                             ->label('Need to save')
                             ->money('INR')
@@ -62,10 +67,10 @@ class ProjectInfolist
                                 }
 
                                 if ($surplus > 0) {
-                                    return 'Surplus ₹'.number_format($surplus, 2).' vs agreed amount';
+                                    return 'Surplus ₹'.number_format($surplus, 2).' after cash + spend';
                                 }
 
-                                return 'Compared to agreed amount.';
+                                return 'Agreed − available cash − already spent.';
                             }),
                     ]),
                 Section::make('Payments to restoration guy')

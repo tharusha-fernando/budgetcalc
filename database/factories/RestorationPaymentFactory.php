@@ -25,6 +25,7 @@ class RestorationPaymentFactory extends Factory
             'method' => PaymentMethod::Cash,
             'paid_on' => fake()->date(),
             'notes' => fake()->optional()->sentence(),
+            'attachments' => [],
         ];
     }
 }

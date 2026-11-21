@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'method',
     'paid_on',
     'notes',
+    'attachments',
 ])]
 class RestorationPayment extends Model
 {
@@ -26,6 +27,7 @@ class RestorationPayment extends Model
      */
     protected $attributes = [
         'method' => 'cash',
+        'attachments' => '[]',
     ];
 
     protected function casts(): array
@@ -34,6 +36,7 @@ class RestorationPayment extends Model
             'amount' => 'decimal:2',
             'method' => PaymentMethod::class,
             'paid_on' => 'date',
+            'attachments' => 'array',
         ];
     }
 

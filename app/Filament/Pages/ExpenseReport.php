@@ -264,8 +264,8 @@ class ExpenseReport extends Page
             ->label('I pay')
             ->color('gray')
             ->requiresConfirmation()
-            ->modalHeading('Mark as I pay?')
-            ->modalDescription('You will pay for this item. It will not be claimed from the restoration guy.')
+            ->modalHeading('Are you sure?')
+            ->modalDescription('Are you sure you want to mark this as I pay? You will cover this cost yourself and it will not be claimed from the restoration guy.')
             ->modalSubmitActionLabel('Yes, I pay')
             ->action(function (array $arguments): void {
                 $item = $this->findProjectItem((int) ($arguments['itemId'] ?? 0));
@@ -316,9 +316,9 @@ class ExpenseReport extends Page
             ->label('Mark returned')
             ->color('warning')
             ->requiresConfirmation()
-            ->modalHeading('Mark this item as returned?')
-            ->modalDescription('Confirm that money came back for this item, then enter who returned it.')
-            ->modalSubmitActionLabel('Continue')
+            ->modalHeading('Are you sure?')
+            ->modalDescription('Are you sure you want to mark this item as returned? Confirm money came back, then enter who returned it.')
+            ->modalSubmitActionLabel('Yes, mark returned')
             ->schema([
                 Select::make('refunded_by')
                     ->label('Who returned the money?')

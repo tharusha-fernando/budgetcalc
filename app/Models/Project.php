@@ -79,13 +79,24 @@ class Project extends Model
         return (float) ($this->cash_on_hand ?? 0) + (float) ($this->cash_to_load ?? 0);
     }
 
+    /**
+     * Cash already spent on purchases that has not come back (charge guy + I pay).
+     */
+    public function spentByMeTotal(): float
+    {
+        return $this->chargeableTotal() + $this->waivedTotal();
+    }
+
     public function cashStillNeeded(): ?float
     {
         if ($this->agreed_amount === null) {
             return null;
         }
 
-        return max(0.0, (float) $this->agreed_amount - $this->availableCash());
+        return max(
+            0.0,
+            (float) $this->agreed_amount - $this->availableCash() - $this->spentByMeTotal(),
+        );
     }
 
     public function cashSurplus(): ?float
@@ -94,7 +105,10 @@ class Project extends Model
             return null;
         }
 
-        return max(0.0, $this->availableCash() - (float) $this->agreed_amount);
+        return max(
+            0.0,
+            $this->availableCash() + $this->spentByMeTotal() - (float) $this->agreed_amount,
+        );
     }
 
     public function paidToRestorationGuyTotal(): float

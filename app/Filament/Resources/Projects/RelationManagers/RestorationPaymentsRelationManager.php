@@ -3,7 +3,9 @@
 namespace App\Filament\Resources\Projects\RelationManagers;
 
 use App\Enums\PaymentMethod;
+use App\Filament\Forms\Components\AttachmentsUpload;
 use App\Models\Project;
+use App\Models\RestorationPayment;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -65,6 +67,8 @@ class RestorationPaymentsRelationManager extends RelationManager
                 Textarea::make('notes')
                     ->rows(2)
                     ->columnSpanFull(),
+                AttachmentsUpload::make(directory: 'payments/attachments')
+                    ->helperText('Payment proof photos or PDFs. On your phone, tap browse → Take Photo (or gallery). Multiple files OK.'),
             ]);
     }
 
@@ -91,6 +95,10 @@ class RestorationPaymentsRelationManager extends RelationManager
                     ->placeholder('—')
                     ->wrap()
                     ->limit(40),
+                TextColumn::make('attachments_count')
+                    ->label('Files')
+                    ->state(fn (RestorationPayment $record): int => count($record->attachments ?? []))
+                    ->alignEnd(),
             ])
             ->defaultSort('paid_on', 'desc')
             ->filters([

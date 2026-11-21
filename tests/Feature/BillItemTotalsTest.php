@@ -150,3 +150,59 @@ it('shows project budget cards on the bill view page', function () {
         ->assertSee('Charge guy')
         ->assertSee('3,000.00');
 });
+
+it('asks are you sure before marking an item as i pay', function () {
+    $user = User::factory()->create();
+    $project = Project::factory()->create();
+    $bill = Bill::factory()->create(['project_id' => $project->id]);
+    $item = BillItem::factory()->create([
+        'bill_id' => $bill->id,
+        'status' => BillItemStatus::Active,
+    ]);
+
+    $component = Livewire::actingAs($user)
+        ->test(BillItemsRelationManager::class, [
+            'ownerRecord' => $project,
+            'pageClass' => ViewProject::class,
+        ])
+        ->mountTableAction('markWaived', $item);
+
+    $action = $component->instance()->getMountedAction();
+
+    expect($action)->not->toBeNull()
+        ->and($action->isConfirmationRequired())->toBeTrue()
+        ->and($action->getModalHeading())->toBe('Are you sure?')
+        ->and($action->getModalSubmitActionLabel())->toBe('Yes, I pay')
+        ->and($item->fresh()->status)->toBe(BillItemStatus::Active);
+
+    $component
+        ->callMountedTableAction()
+        ->assertHasNoTableActionErrors();
+
+    expect($item->fresh()->status)->toBe(BillItemStatus::Waived);
+});
+
+it('asks are you sure before marking an item as returned', function () {
+    $user = User::factory()->create();
+    $project = Project::factory()->create();
+    $bill = Bill::factory()->create(['project_id' => $project->id]);
+    $item = BillItem::factory()->create([
+        'bill_id' => $bill->id,
+        'status' => BillItemStatus::Active,
+    ]);
+
+    $component = Livewire::actingAs($user)
+        ->test(BillItemsRelationManager::class, [
+            'ownerRecord' => $project,
+            'pageClass' => ViewProject::class,
+        ])
+        ->mountTableAction('markReturned', $item);
+
+    $action = $component->instance()->getMountedAction();
+
+    expect($action)->not->toBeNull()
+        ->and($action->isConfirmationRequired())->toBeTrue()
+        ->and($action->getModalHeading())->toBe('Are you sure?')
+        ->and($action->getModalSubmitActionLabel())->toBe('Yes, mark returned')
+        ->and($item->fresh()->status)->toBe(BillItemStatus::Active);
+});

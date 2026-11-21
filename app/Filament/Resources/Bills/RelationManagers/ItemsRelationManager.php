@@ -106,9 +106,9 @@ class ItemsRelationManager extends RelationManager
                     ->color('warning')
                     ->visible(fn (BillItem $record): bool => $record->status === BillItemStatus::Active)
                     ->requiresConfirmation()
-                    ->modalHeading('Mark this item as returned?')
-                    ->modalDescription('Confirm that money came back for this item, then enter who returned it.')
-                    ->modalSubmitActionLabel('Continue')
+                    ->modalHeading('Are you sure?')
+                    ->modalDescription('Are you sure you want to mark this item as returned? Confirm money came back, then enter who returned it.')
+                    ->modalSubmitActionLabel('Yes, mark returned')
                     ->schema([
                         Select::make('refunded_by')
                             ->label('Who returned the money?')
@@ -142,8 +142,8 @@ class ItemsRelationManager extends RelationManager
                     ->color('gray')
                     ->visible(fn (BillItem $record): bool => $record->status !== BillItemStatus::Waived)
                     ->requiresConfirmation()
-                    ->modalHeading('Mark as I pay?')
-                    ->modalDescription('You pay for this item. It will not be claimed from the restoration guy.')
+                    ->modalHeading('Are you sure?')
+                    ->modalDescription('Are you sure you want to mark this as I pay? You will cover this cost yourself and it will not be claimed from the restoration guy.')
                     ->modalSubmitActionLabel('Yes, I pay')
                     ->action(function (BillItem $record): void {
                         $record->markWaived('Paid by me — not claimed from restoration guy.');

@@ -85,9 +85,9 @@ class BillsRelationManager extends RelationManager
                 TextColumn::make('items_count')
                     ->counts('items')
                     ->label('Items'),
-                TextColumn::make('attachments')
+                TextColumn::make('attachments_count')
                     ->label('Files')
-                    ->formatStateUsing(fn (?array $state): string => (string) count($state ?? []))
+                    ->state(fn (Bill $record): int => count($record->attachments ?? []))
                     ->alignEnd(),
                 TextColumn::make('chargeable_total')
                     ->label('Chargeable')

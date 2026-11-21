@@ -1,7 +1,10 @@
 <?php
 
+use App\Enums\BillItemStatus;
 use App\Enums\PaymentMethod;
 use App\Filament\Resources\Projects\Widgets\PaymentProgressChart;
+use App\Models\Bill;
+use App\Models\BillItem;
 use App\Models\Project;
 use App\Models\RestorationPayment;
 use App\Models\User;
@@ -15,11 +18,48 @@ it('calculates how much cash still needs to be saved against agreed amount', fun
     ]);
 
     expect($project->availableCash())->toBe(30000.0)
+        ->and($project->spentByMeTotal())->toBe(0.0)
         ->and($project->cashStillNeeded())->toBe(15000.0)
         ->and($project->cashSurplus())->toBe(0.0);
 });
 
-it('reports surplus when available cash covers the agreed amount', function () {
+it('deducts money already spent on unrecovered purchases from need to save', function () {
+    $project = Project::factory()->create([
+        'agreed_amount' => 45000,
+        'cash_on_hand' => 20000,
+        'cash_to_load' => 10000,
+    ]);
+
+    $bill = Bill::factory()->create([
+        'project_id' => $project->id,
+    ]);
+
+    BillItem::factory()->create([
+        'bill_id' => $bill->id,
+        'quantity' => 1,
+        'unit_price' => 5000,
+        'status' => BillItemStatus::Active,
+    ]);
+
+    BillItem::factory()->create([
+        'bill_id' => $bill->id,
+        'quantity' => 1,
+        'unit_price' => 2000,
+        'status' => BillItemStatus::Waived,
+    ]);
+
+    BillItem::factory()->create([
+        'bill_id' => $bill->id,
+        'quantity' => 1,
+        'unit_price' => 3000,
+        'status' => BillItemStatus::Returned,
+    ]);
+
+    expect($project->spentByMeTotal())->toBe(7000.0)
+        ->and($project->cashStillNeeded())->toBe(8000.0);
+});
+
+it('reports surplus when available cash and spent cover the agreed amount', function () {
     $project = Project::factory()->create([
         'agreed_amount' => 45000,
         'cash_on_hand' => 40000,
@@ -30,7 +70,7 @@ it('reports surplus when available cash covers the agreed amount', function () {
         ->and($project->cashSurplus())->toBe(5000.0);
 });
 
-it('shows the cash plan on the project view page', function () {
+it('shows the cash plan and spent total on the project view page', function () {
     $user = User::factory()->create();
     $project = Project::factory()->create([
         'name' => 'Cash Plan Jeep',
@@ -39,13 +79,26 @@ it('shows the cash plan on the project view page', function () {
         'cash_to_load' => 8000,
     ]);
 
+    $bill = Bill::factory()->create([
+        'project_id' => $project->id,
+    ]);
+
+    BillItem::factory()->create([
+        'bill_id' => $bill->id,
+        'quantity' => 1,
+        'unit_price' => 5000,
+        'status' => BillItemStatus::Active,
+    ]);
+
     $this->actingAs($user)
         ->get('/admin/projects/'.$project->id)
         ->assertOk()
         ->assertSee('Cash plan')
         ->assertSee('Cash on hand')
+        ->assertSee('I already spent')
         ->assertSee('Need to save')
-        ->assertSee('15,000.00')
+        ->assertSee('5,000.00')
+        ->assertSee('10,000.00')
         ->assertSee('Payment progress');
 });
 
