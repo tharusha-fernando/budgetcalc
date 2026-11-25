@@ -34,7 +34,7 @@ class ProjectInfolist
                             ->columnSpanFull(),
                     ]),
                 Section::make('Cash plan')
-                    ->columns(5)
+                    ->columns(7)
                     ->schema([
                         TextEntry::make('cash_on_hand')
                             ->label('Cash on hand')
@@ -43,35 +43,40 @@ class ProjectInfolist
                         TextEntry::make('cash_to_load')
                             ->label('Cash I will load')
                             ->money('INR')
-                            ->placeholder('—'),
-                        TextEntry::make('available_cash')
-                            ->label('Available cash')
-                            ->money('INR')
-                            ->state(fn (Project $record): float => $record->availableCash()),
+                            ->placeholder('—')
+                            ->helperText('Loan / cash you will add.'),
                         TextEntry::make('spent_by_me')
                             ->label('I already spent')
                             ->money('INR')
                             ->state(fn (Project $record): float => $record->spentByMeTotal())
                             ->helperText('Parts / labor paid by me that are not returned.'),
+                        TextEntry::make('paid_to_guy_in_plan')
+                            ->label('Paid to guy')
+                            ->money('INR')
+                            ->state(fn (Project $record): float => $record->paidToRestorationGuyTotal()),
+                        TextEntry::make('budget_covered')
+                            ->label('Total covered')
+                            ->money('INR')
+                            ->state(fn (Project $record): float => $record->budgetCoveredTotal())
+                            ->helperText('Paid guy + spent parts + on hand + loan.'),
                         TextEntry::make('cash_still_needed')
                             ->label('Need to save')
                             ->money('INR')
                             ->state(fn (Project $record): ?float => $record->cashStillNeeded())
                             ->placeholder('Set agreed amount')
-                            ->color(fn (Project $record): string => ($record->cashStillNeeded() ?? 0) > 0 ? 'danger' : 'success')
-                            ->helperText(function (Project $record): ?string {
-                                $surplus = $record->cashSurplus();
-
-                                if ($surplus === null) {
-                                    return null;
-                                }
-
-                                if ($surplus > 0) {
-                                    return 'Surplus ₹'.number_format($surplus, 2).' after cash + spend';
-                                }
-
-                                return 'Agreed − available cash − already spent.';
-                            }),
+                            ->visible(fn (Project $record): bool => ($record->cashStillNeeded() ?? 0) > 0)
+                            ->color('danger')
+                            ->weight('bold')
+                            ->helperText('Agreed − total covered.'),
+                        TextEntry::make('cash_surplus')
+                            ->label('Surplus')
+                            ->money('INR')
+                            ->state(fn (Project $record): ?float => $record->cashSurplus())
+                            ->placeholder('Set agreed amount')
+                            ->visible(fn (Project $record): bool => ($record->cashSurplus() ?? 0) > 0)
+                            ->color('success')
+                            ->weight('bold')
+                            ->helperText('Total covered is more than agreed.'),
                     ]),
                 Section::make('Payments to restoration guy')
                     ->columns(3)

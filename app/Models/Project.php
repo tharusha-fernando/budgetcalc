@@ -87,16 +87,27 @@ class Project extends Model
         return $this->chargeableTotal() + $this->waivedTotal();
     }
 
+    /**
+     * Everything already counting toward the agreed budget:
+     * paid to guy + parts/labor spent + cash on hand + loan / cash to load.
+     */
+    public function budgetCoveredTotal(): float
+    {
+        return $this->paidToRestorationGuyTotal()
+            + $this->spentByMeTotal()
+            + $this->availableCash();
+    }
+
+    /**
+     * Extra cash still needed so covered total reaches the agreed amount.
+     */
     public function cashStillNeeded(): ?float
     {
         if ($this->agreed_amount === null) {
             return null;
         }
 
-        return max(
-            0.0,
-            (float) $this->agreed_amount - $this->availableCash() - $this->spentByMeTotal(),
-        );
+        return max(0.0, (float) $this->agreed_amount - $this->budgetCoveredTotal());
     }
 
     public function cashSurplus(): ?float
@@ -105,10 +116,7 @@ class Project extends Model
             return null;
         }
 
-        return max(
-            0.0,
-            $this->availableCash() + $this->spentByMeTotal() - (float) $this->agreed_amount,
-        );
+        return max(0.0, $this->budgetCoveredTotal() - (float) $this->agreed_amount);
     }
 
     public function paidToRestorationGuyTotal(): float

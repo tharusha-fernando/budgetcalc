@@ -2,11 +2,10 @@
 
 Summary of product work landed in commit `9c8ffec` (and the app foundation in `66050ca`).
 
-## Cash plan fix
+## Cash plan
 
-- **Problem:** Need to save ignored money already spent on parts/labor that wasn’t returned (or marked I pay).
-- **Change:** `spentByMeTotal()` = charge guy + I pay; need to save = agreed − available cash − spent by me.
-- **UI:** Project view shows **I already spent** next to Need to save.
+- **Total covered** = paid to guy + parts spent + cash on hand + loan.
+- **Need to save** (red) when covered &lt; agreed; **Surplus** (green) when covered &gt; agreed.
 - **Tests:** `tests/Feature/ProjectCashPlanTest.php`
 
 ## Payment attachments + camera-friendly uploads

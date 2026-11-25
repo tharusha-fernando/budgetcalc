@@ -30,12 +30,26 @@ class ProjectsTable
                 TextColumn::make('agreed_amount')
                     ->money('INR')
                     ->placeholder('—'),
-                TextColumn::make('cash_still_needed')
-                    ->label('Need to save')
+                TextColumn::make('cash_plan')
+                    ->label('Cash plan')
                     ->money('INR')
-                    ->state(fn (Project $record): ?float => $record->cashStillNeeded())
+                    ->state(function (Project $record): ?float {
+                        $needed = $record->cashStillNeeded();
+
+                        if ($needed === null) {
+                            return null;
+                        }
+
+                        return $needed > 0 ? $needed : $record->cashSurplus();
+                    })
                     ->placeholder('—')
-                    ->color(fn (Project $record): string => ($record->cashStillNeeded() ?? 0) > 0 ? 'danger' : 'success'),
+                    ->description(fn (Project $record): ?string => match (true) {
+                        $record->cashStillNeeded() === null => null,
+                        ($record->cashStillNeeded() ?? 0) > 0 => 'Need to save',
+                        default => 'Surplus',
+                    })
+                    ->color(fn (Project $record): string => ($record->cashStillNeeded() ?? 0) > 0 ? 'danger' : 'success')
+                    ->weight('bold'),
                 TextColumn::make('chargeable_total')
                     ->label('Chargeable')
                     ->money('INR')

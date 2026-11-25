@@ -10,7 +10,7 @@ use App\Models\RestorationPayment;
 use App\Models\User;
 use Livewire\Livewire;
 
-it('calculates how much cash still needs to be saved against agreed amount', function () {
+it('calculates need to save from agreed minus covered budget pieces', function () {
     $project = Project::factory()->create([
         'agreed_amount' => 45000,
         'cash_on_hand' => 20000,
@@ -18,16 +18,22 @@ it('calculates how much cash still needs to be saved against agreed amount', fun
     ]);
 
     expect($project->availableCash())->toBe(30000.0)
-        ->and($project->spentByMeTotal())->toBe(0.0)
+        ->and($project->budgetCoveredTotal())->toBe(30000.0)
         ->and($project->cashStillNeeded())->toBe(15000.0)
         ->and($project->cashSurplus())->toBe(0.0);
 });
 
-it('deducts money already spent on unrecovered purchases from need to save', function () {
+it('counts paid to guy, parts spend, cash on hand, and loan toward the agreed budget', function () {
     $project = Project::factory()->create([
-        'agreed_amount' => 45000,
-        'cash_on_hand' => 20000,
-        'cash_to_load' => 10000,
+        'agreed_amount' => 2400000,
+        'cash_on_hand' => 600000,
+        'cash_to_load' => 1300000,
+    ]);
+
+    RestorationPayment::factory()->create([
+        'project_id' => $project->id,
+        'amount' => 560000,
+        'method' => PaymentMethod::Cash,
     ]);
 
     $bill = Bill::factory()->create([
@@ -37,29 +43,19 @@ it('deducts money already spent on unrecovered purchases from need to save', fun
     BillItem::factory()->create([
         'bill_id' => $bill->id,
         'quantity' => 1,
-        'unit_price' => 5000,
+        'unit_price' => 160160,
         'status' => BillItemStatus::Active,
     ]);
 
-    BillItem::factory()->create([
-        'bill_id' => $bill->id,
-        'quantity' => 1,
-        'unit_price' => 2000,
-        'status' => BillItemStatus::Waived,
-    ]);
-
-    BillItem::factory()->create([
-        'bill_id' => $bill->id,
-        'quantity' => 1,
-        'unit_price' => 3000,
-        'status' => BillItemStatus::Returned,
-    ]);
-
-    expect($project->spentByMeTotal())->toBe(7000.0)
-        ->and($project->cashStillNeeded())->toBe(8000.0);
+    expect($project->paidToRestorationGuyTotal())->toBe(560000.0)
+        ->and($project->spentByMeTotal())->toBe(160160.0)
+        ->and($project->availableCash())->toBe(1900000.0)
+        ->and($project->budgetCoveredTotal())->toBe(2620160.0)
+        ->and($project->cashStillNeeded())->toBe(0.0)
+        ->and($project->cashSurplus())->toBe(220160.0);
 });
 
-it('reports surplus when available cash and spent cover the agreed amount', function () {
+it('reports surplus when covered total exceeds the agreed amount', function () {
     $project = Project::factory()->create([
         'agreed_amount' => 45000,
         'cash_on_hand' => 40000,
@@ -96,10 +92,44 @@ it('shows the cash plan and spent total on the project view page', function () {
         ->assertSee('Cash plan')
         ->assertSee('Cash on hand')
         ->assertSee('I already spent')
+        ->assertSee('Total covered')
         ->assertSee('Need to save')
         ->assertSee('5,000.00')
         ->assertSee('10,000.00')
         ->assertSee('Payment progress');
+});
+
+it('shows surplus in green on the project view when covered exceeds agreed', function () {
+    $user = User::factory()->create();
+    $project = Project::factory()->create([
+        'name' => 'Tata Sumo',
+        'agreed_amount' => 2400000,
+        'cash_on_hand' => 600000,
+        'cash_to_load' => 1300000,
+    ]);
+
+    RestorationPayment::factory()->create([
+        'project_id' => $project->id,
+        'amount' => 560000,
+        'method' => PaymentMethod::Cash,
+    ]);
+
+    BillItem::factory()->create([
+        'bill_id' => Bill::factory()->create([
+            'project_id' => $project->id,
+        ])->id,
+        'quantity' => 1,
+        'unit_price' => 160160,
+        'status' => BillItemStatus::Active,
+    ]);
+
+    $this->actingAs($user)
+        ->get('/admin/projects/'.$project->id)
+        ->assertOk()
+        ->assertSee('Surplus')
+        ->assertSee('220,160.00')
+        ->assertSee('Total covered')
+        ->assertDontSee('Need to save');
 });
 
 it('charts paid vs remaining restoration payments on the project view', function () {
